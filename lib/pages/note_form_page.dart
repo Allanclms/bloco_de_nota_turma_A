@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import '../database/database_helper.dart';
+import '../services/note_repository.dart';
 import '../models/note.dart';
 
 class NoteFormPage extends StatefulWidget {
@@ -16,7 +16,7 @@ class NoteFormPage extends StatefulWidget {
 class _NoteFormPageState extends State<NoteFormPage> {
   final titleController = TextEditingController();
   final contentController = TextEditingController();
-  final database = DatabaseHelper.instance;
+  final repository = NoteRepository.instance;
   String selectedCategory = 'Pessoal';
   List<String> categories = ['Pessoal', 'Estudos', 'Trabalho', 'Outros'];
   bool saving = false;
@@ -37,7 +37,7 @@ class _NoteFormPageState extends State<NoteFormPage> {
   Future<void> loadCategories() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final result = await database.getCategories(user.uid);
+    final result = await repository.getCategories(user.uid);
     if (!mounted) return;
     setState(() {
       categories = result;
@@ -111,11 +111,7 @@ class _NoteFormPageState extends State<NoteFormPage> {
     );
 
     try {
-      if (isEditing) {
-        await database.updateNote(note);
-      } else {
-        await database.insertNote(note);
-      }
+      await repository.save(note);
       if (mounted) Navigator.pop(context);
     } catch (_) {
       if (mounted) {

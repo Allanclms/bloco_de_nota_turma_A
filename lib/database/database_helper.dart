@@ -135,4 +135,27 @@ class DatabaseHelper {
       whereArgs: [id, uid],
     );
   }
+  Future<List<Note>> getPendingNotes(String uid) async {
+    final db = await database;
+    final rows = await db.query('notes', where: 'uid = ? AND sync_status = 0', whereArgs: [uid]);
+    return rows.map(Note.fromMap).toList();
+  }
+
+  Future<void> markSynced(int id, String uid) async {
+    final db = await database;
+    await db.update('notes', {'sync_status': 1}, where: 'id = ? AND uid = ?', whereArgs: [id, uid]);
+  }
+
+  Future<void> upsertFromCloud(Note remote) async {
+    final db = await database;
+    final rows = await db.query('notes', where: 'uid = ? AND sync_id = ?', whereArgs: [remote.uid, remote.syncId], limit: 1);
+    if (rows.isEmpty) {
+      await db.insert('notes', remote.toMap()..remove('id'));
+      return;
+    }
+    final existing = Note.fromMap(rows.first);
+    if (existing.syncStatus == 0 || existing.updatedAt.compareTo(remote.updatedAt) > 0) return;
+    await db.update('notes', remote.toMap()..remove('id'), where: 'id = ? AND uid = ?', whereArgs: [existing.id, existing.uid]);
+  }
+
 }

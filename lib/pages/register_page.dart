@@ -29,6 +29,10 @@ class _RegisterPageState extends State<RegisterPage> {
 
       return;
     }
+    if (password.length < 6) {
+      showMessage('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
     if (password != confirm) {
       showMessage("As senhas não são iguais.");
       return;
@@ -173,6 +177,12 @@ class _RegisterPageState extends State<RegisterPage> {
             ),
             SizedBox(height: 30),
             ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6C4AB6),
+                foregroundColor: Colors.white,
+                disabledForegroundColor: Colors.white70,
+                minimumSize: const Size(double.infinity, 52),
+              ),
               onPressed: loading ? null : register,
               child: loading
                   ? CircularProgressIndicator(color: Colors.white)

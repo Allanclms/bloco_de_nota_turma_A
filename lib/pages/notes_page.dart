@@ -1,4 +1,4 @@
-import 'package:bloco_de_nota_turma_a/database/database_helper.dart';
+import 'package:bloco_de_nota_turma_a/services/note_repository.dart';
 import 'package:bloco_de_nota_turma_a/models/note.dart';
 import 'package:bloco_de_nota_turma_a/pages/login_page.dart';
 import 'package:bloco_de_nota_turma_a/pages/note_form_page.dart';
@@ -15,7 +15,7 @@ class NotesPage extends StatefulWidget {
 }
 
 class _NotesPageState extends State<NotesPage> {
-  final DatabaseHelper database = DatabaseHelper.instance;
+  final NoteRepository repository = NoteRepository.instance;
   final AuthService authService = AuthService();
   final TextEditingController searchController = TextEditingController();
 
@@ -23,37 +23,74 @@ class _NotesPageState extends State<NotesPage> {
   List<String> categories = ['Todas'];
   String selectedCategory = 'Todas';
   bool loading = true;
+  bool syncing = false;
+  String? syncError;
 
   @override
   void initState() {
     super.initState();
-    loadNotes();
+    syncNotes();
   }
 
   Future<void> loadNotes() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final result = await database.getNotes(
-      user.uid,
-      search: searchController.text,
-      category: selectedCategory,
-    );
-    final savedCategories = await database.getCategories(user.uid);
-    if (!mounted) return;
-    setState(() {
-      notes = result;
-      categories = ['Todas', ...savedCategories];
-      loading = false;
-    });
+    try {
+      final result = await repository.getNotes(
+        user.uid,
+        search: searchController.text,
+        category: selectedCategory,
+      );
+      final savedCategories = await repository.getCategories(user.uid);
+      if (!mounted) return;
+      setState(() {
+        notes = result;
+        categories = ['Todas', ...savedCategories];
+        loading = false;
+        syncError = null;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        syncError = 'Não foi possível carregar as notas. Verifique a conexão e as regras do Firestore.';
+      });
+    }
   }
 
   Future<void> deleteNote(Note note) async {
-    await database.deleteNote(note.id!, note.uid);
-    await loadNotes();
+    try {
+      await repository.delete(note);
+      await loadNotes();
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não foi possível excluir a nota.')),
+      );
+      return;
+    }
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Nota deletada com sucesso!')),
       );
+    }
+  }
+
+  Future<void> syncNotes() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || syncing) return;
+    setState(() => syncing = true);
+    try {
+      await repository.synchronize(user.uid);
+      await loadNotes();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sincronização concluída.')),
+      );
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sem conexão ou acesso ao Firestore. As alterações locais continuam salvas no Android.')),
+      );
+    } finally {
+      if (mounted) setState(() => syncing = false);
     }
   }
 
@@ -100,6 +137,11 @@ class _NotesPageState extends State<NotesPage> {
         ),
         actions: [
           IconButton(
+            tooltip: 'Sincronizar',
+            onPressed: syncing ? null : syncNotes,
+            icon: const Icon(Icons.sync_rounded),
+          ),
+          IconButton(
             tooltip: 'Sair',
             onPressed: logout,
             icon: const Icon(Icons.logout_rounded),
@@ -129,6 +171,10 @@ class _NotesPageState extends State<NotesPage> {
                 fontSize: 13,
               ),
             ),
+            if (syncError != null) ...[
+              Text(syncError!, style: const TextStyle(color: Colors.red)),
+              const SizedBox(height: 10),
+            ],
             const SizedBox(height: 18),
             TextField(
               controller: searchController,
