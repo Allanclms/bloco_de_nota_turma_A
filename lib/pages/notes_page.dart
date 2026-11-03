@@ -6,7 +6,6 @@ import 'package:bloco_de_nota_turma_a/services/auth_service.dart';
 import 'package:bloco_de_nota_turma_a/widgets/note_card.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class NotesPage extends StatefulWidget {
   const NotesPage({super.key});
@@ -18,8 +17,13 @@ class NotesPage extends StatefulWidget {
 class _NotesPageState extends State<NotesPage> {
   final DatabaseHelper database = DatabaseHelper.instance;
   final AuthService authService = AuthService();
+  final TextEditingController searchController = TextEditingController();
 
   List<Note> notes = [];
+  List<String> categories = ['Todas'];
+  String selectedCategory = 'Todas';
+  bool loading = true;
+
   @override
   void initState() {
     super.initState();
@@ -29,22 +33,27 @@ class _NotesPageState extends State<NotesPage> {
   Future<void> loadNotes() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    final result = await database.getNotes(user.uid);
-
-    if (mounted) {
-      setState(() {
-        notes = result;
-      });
-    }
+    final result = await database.getNotes(
+      user.uid,
+      search: searchController.text,
+      category: selectedCategory,
+    );
+    final savedCategories = await database.getCategories(user.uid);
+    if (!mounted) return;
+    setState(() {
+      notes = result;
+      categories = ['Todas', ...savedCategories];
+      loading = false;
+    });
   }
 
-  Future<void> deleteNote(int id) async {
-    await database.deleteNote(id);
+  Future<void> deleteNote(Note note) async {
+    await database.deleteNote(note.id!, note.uid);
     await loadNotes();
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Nota deletada com sucesso!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nota deletada com sucesso!')),
+      );
     }
   }
 
@@ -53,22 +62,31 @@ class _NotesPageState extends State<NotesPage> {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => LoginPage()),
+      MaterialPageRoute(builder: (_) => const LoginPage()),
       (route) => false,
     );
   }
 
-  Future<void> openEditNote(Note note) async{
-    await Navigator.push(context, 
-    MaterialPageRoute(builder:(_)=> NoteFormPage(note: note)));
-
+  Future<void> openEditNote(Note note) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => NoteFormPage(note: note)),
+    );
     await loadNotes();
   }
-  Future<void> openNewNote() async{
-    await Navigator.push(context, 
-    MaterialPageRoute(builder:(_)=> NoteFormPage()));
 
+  Future<void> openNewNote() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NoteFormPage()),
+    );
     await loadNotes();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -76,73 +94,125 @@ class _NotesPageState extends State<NotesPage> {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
       appBar: AppBar(
-        title: Text("Minhas notas", style: TextStyle(fontWeight:FontWeight.bold )),
-        actions:[
+        title: const Text(
+          'Minhas notas',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
           IconButton(
-            tooltip: "Sair",
+            tooltip: 'Sair',
             onPressed: logout,
-            icon: Icon(Icons.logout_rounded)
+            icon: const Icon(Icons.logout_rounded),
           ),
-          SizedBox(width: 8)
-        ] 
+          const SizedBox(width: 8),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: openNewNote,
-        backgroundColor: Color(0xff6c4ab6),
+        backgroundColor: const Color(0xff6c4ab6),
         foregroundColor: Colors.white,
-        icon: Icon(Icons.add_rounded),
-        label: Text("Nova Nota", style: TextStyle(fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Nova Nota',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: Padding(
-        padding: EdgeInsets.fromLTRB(20,10,20,90),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 90),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children:[
-            Text(user?.email ?? "", style: TextStyle(color: Color(0xFF77717f), fontSize:13)),
-            SizedBox(height: 20),
-            if(notes.isEmpty)
+          children: [
+            Text(
+              user?.email ?? '',
+              style: const TextStyle(
+                color: Color(0xFF77717f),
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: searchController,
+              onChanged: (_) => loadNotes(),
+              decoration: InputDecoration(
+                hintText: 'Pesquisar título ou conteúdo',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    searchController.clear();
+                    loadNotes();
+                  },
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: selectedCategory,
+              decoration: const InputDecoration(
+                labelText: 'Filtrar categoria',
+                prefixIcon: Icon(Icons.filter_list),
+              ),
+              items: categories
+                  .map((category) => DropdownMenuItem(
+                        value: category,
+                        child: Text(category),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => selectedCategory = value);
+                loadNotes();
+              },
+            ),
+            const SizedBox(height: 16),
+            if (loading)
+              const Expanded(child: Center(child: CircularProgressIndicator()))
+            else if (notes.isEmpty)
               Expanded(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children:[
+                    children: [
                       Container(
                         width: 100,
-                        height:100,
-
-                        decoration: BoxDecoration(
+                        height: 100,
+                        decoration: const BoxDecoration(
                           color: Color(0xffede5fa),
-                          shape: BoxShape.circle
+                          shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.sticky_note_2_rounded,
-                          color: Color(0xffede5fa)
-                        )
+                          color: Color(0xff6c4ab6),
+                          size: 45,
+                        ),
                       ),
-                      SizedBox(height: 25),
-                      Text("Nenhuma nota ainda"),
-                      SizedBox(height: 8),
-                      Text('Crie sua primeira nota.')
-                    ]
-                  )
-                )
+                      const SizedBox(height: 25),
+                      Text(
+                        searchController.text.isNotEmpty ||
+                                selectedCategory != 'Todas'
+                            ? 'Nenhuma nota encontrada'
+                            : 'Nenhuma nota ainda',
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('Crie sua primeira nota.'),
+                    ],
+                  ),
+                ),
               )
             else
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: notes.length,
-                    itemBuilder: (context, index){
-                      final note = notes[index];
-
-                      return NoteCard(
-                        note: note,
-                        onTap: () => openEditNote(note),
-                        onDelete: () => deleteNote(note.id!),
-                      );
-                    }
-                  )
-                )
-
+              Expanded(
+                child: ListView.builder(
+                  itemCount: notes.length,
+                  itemBuilder: (context, index) {
+                    final note = notes[index];
+                    return NoteCard(
+                      note: note,
+                      onTap: () => openEditNote(note),
+                      onDelete: () => deleteNote(note),
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),
