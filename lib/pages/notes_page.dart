@@ -192,11 +192,17 @@ class _NotesPageState extends State<NotesPage> {
               ),
             ),
             const SizedBox(height: 12),
+            const Text(
+              'Filtrar categoria',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               value: selectedCategory,
+              isExpanded: true,
               decoration: const InputDecoration(
-                labelText: 'Filtrar categoria',
                 prefixIcon: Icon(Icons.filter_list),
+                floatingLabelBehavior: FloatingLabelBehavior.never,
               ),
               items: categories
                   .map((category) => DropdownMenuItem(

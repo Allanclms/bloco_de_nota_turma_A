@@ -2,6 +2,7 @@ import 'package:bloco_de_nota_turma_a/database/database_helper.dart';
 import 'package:bloco_de_nota_turma_a/models/note.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import '../utils/note_sort.dart';
 
 class NoteRepository {
   static final NoteRepository instance = NoteRepository._();
@@ -84,10 +85,10 @@ class NoteRepository {
           .where((note) => category == null || category == 'Todas' || note.category == category)
           .where((note) => query.isEmpty || note.title.toLowerCase().contains(query) || note.content.toLowerCase().contains(query))
           .toList();
-      notes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-      return notes;
+      return sortNotesByUpdate(notes);
     }
-    return local.getNotes(uid, search: search, category: category);
+    final notes = await local.getNotes(uid, search: search, category: category);
+    return sortNotesByUpdate(notes);
   }
 
   Future<List<String>> getCategories(String uid) async {

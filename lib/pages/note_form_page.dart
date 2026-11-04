@@ -153,72 +153,103 @@ class _NoteFormPageState extends State<NoteFormPage> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(22),
-        child: Column(
-          children: [
-            TextField(
-              controller: titleController,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF292333),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Título da nota',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
-              decoration: const InputDecoration(
-                hintText: 'Título',
-                border: InputBorder.none,
-                filled: false,
-                contentPadding: EdgeInsets.symmetric(horizontal: 4),
-              ),
-            ),
-            DropdownButtonFormField<String>(
-              value: selectedCategory,
-              decoration: const InputDecoration(
-                labelText: 'Categoria',
-                prefixIcon: Icon(Icons.folder_outlined),
-              ),
-              items: categories
-                  .map((category) => DropdownMenuItem(
-                        value: category,
-                        child: Text(category),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) setState(() => selectedCategory = value);
-              },
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: addCategory,
-                icon: const Icon(Icons.add),
-                label: const Text('Criar categoria'),
-              ),
-            ),
-            const Divider(color: Color(0xFFE4DFEA)),
-            Expanded(
-              child: TextField(
-                controller: contentController,
-                maxLines: null,
-                expands: true,
-                textAlignVertical: TextAlignVertical.top,
-                style: const TextStyle(
-                  fontSize: 17,
-                  height: 1.5,
-                  color: Color(0xFF40394A),
-                ),
-                decoration: const InputDecoration(
-                  hintText: 'Comece a escrever...',
-                  border: InputBorder.none,
-                  filled: false,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 15,
+              const SizedBox(height: 8),
+              TextField(
+                controller: titleController,
+                textCapitalization: TextCapitalization.sentences,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                decoration: InputDecoration(
+                  hintText: 'Digite o título da nota...',
+                  prefixIcon: const Icon(Icons.edit_outlined),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFD5CCDF)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFFD5CCDF)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: Color(0xFF6C4AB6), width: 2),
                   ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Text(
+                'Categoria',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedCategory,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.folder_outlined),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                items: categories
+                    .map((category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) setState(() => selectedCategory = value);
+                },
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: addCategory,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Criar categoria'),
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Conteúdo',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: TextField(
+                  controller: contentController,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  style: const TextStyle(fontSize: 16, height: 1.5),
+                  decoration: InputDecoration(
+                    hintText: 'Comece a escrever sua nota...',
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.all(16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,30 +1,22 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:bloco_de_nota_turma_a/main.dart';
+import 'package:bloco_de_nota_turma_a/models/note.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
-
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('converte nota para mapa e recupera os dados', () {
+    final note = Note(
+      id: 7,
+      uid: 'usuario',
+      title: 'Estudar',
+      content: 'Revisar Flutter',
+      date: '03/11/2026 20:00',
+      category: 'Estudos',
+      syncId: 'nota-7',
+      updatedAt: '2026-11-03T23:00:00.000Z',
+    );
+    final recovered = Note.fromMap(note.toMap());
+    expect(recovered.title, 'Estudar');
+    expect(recovered.category, 'Estudos');
+    expect(recovered.syncId, 'nota-7');
+    expect(recovered.content, 'Revisar Flutter');
   });
 }
