@@ -74,3 +74,32 @@ Além disso, foram realizados testes manuais de cadastro, login, criação, edi�
 ## Organização do desenvolvimento
 
 Para organizar o trabalho, foi utilizado uma branch chamada `desenvolvimento`, separada da branch principal.
+
+## Capturas de tela
+
+### Tela de login
+![Tela de login](screenshots/login.png)
+
+### Tela de cadastro
+![Tela de cadastro](screenshots/cadastro.png)
+
+### Tela Inicial
+![Lista de notas](screenshots/primeiratela.png)
+
+### Criação de notas
+![Criação de notas](screenshots/criandonota.png)
+
+### Notas Criadas
+![Notas Criadas](screenshots/notascriadas.png)
+
+### Notas Filtradas por Categoria
+![Notas Filtradas por Categoria](screenshots/notasfiltradasselecao.png)
+
+### Notas Filtradas por Barra de Pesquisa
+![Notas Filtradas por Barra de Pesquisa](screenshots/notasfiltradaspesquisa.png)
+
+### Dados no Firebase
+![Dados armazenados no Firebase](screenshots/firebasebanco.png)
+
+### Recuperando dados no Firebase
+![Recuperacao de dados no Firebase](screenshots/firebasealteracao.png)
